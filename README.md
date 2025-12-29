@@ -11,46 +11,52 @@ A local AI-powered tool to generate Azure DevOps work items (features/bugs) in M
 - Simple web interface via Streamlit
 
 ## Architecture
+
 - Frontend (Streamlit) → API (Flask) → Ollama (LLM)
 
 ## Requirements
+
 - Docker & Docker Compose
 
 ## Quick Start
+
 1. Clone the repository:
+
 ```bash
 git clone https://github.com/your-username/ticket-ai.git
 cd ticket-ai
 ```
+
 2. Pull and start Ollama model (recommended lightweight model):
+
 ```bash
 Docker compose up -d ollamacker exec -it ticket-ai-ollama-1 ollama pull phi3:mini   # or phi4-mini:latest
 ```
+
 3. Build and run the full stack:
+
 ```bash
 docker compose up --build
 ```
+
 4. Open the frontend:
-http://localhost:8501
-
-
+   http://localhost:8501
 
 ## Services
-Frontend: Streamlit at http://localhost:8501
-API: Flask at http://localhost:5454/generate-ticket (POST)
-Ollama: http://localhost:11434
+
+- Frontend: Streamlit at http://localhost:8501
+- Backend: Flask at http://localhost:5454/generate-ticket (POST)
+- Ollama: http://localhost:11434
 
 ## Customization
+
 Edit PROMPT_TEMPLATE in api.py to change output format
 Change model in api.py (phi4-mini:latest by default)
 
-Contributing
+## Contributing
+
 Feel free to open issues or PRs.
-License
+
+## License
+
 MIT
-
-
-
-
-
-
