@@ -2,6 +2,8 @@
 
 A local AI-powered tool to generate Azure DevOps work items (features/bugs) in Markdown format using Ollama models.
 
+<img width="737" height="827" alt="Image" src="https://github.com/user-attachments/assets/651248bd-1db6-4c34-8e1a-55bfa5ae68f2" />
+
 ## Features
 
 - Runs completely locally (Docker containers)
