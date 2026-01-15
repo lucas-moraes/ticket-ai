@@ -1,3 +1,5 @@
 flask
 requests
 streamlit
+python-dotenv
+huggingface_hub

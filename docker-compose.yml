@@ -1,17 +1,10 @@
 services:
-  ollama:
-    image: ollama/ollama
-    ports:
-      - "11434:11434"
-    volumes:
-      - ollama:/root/.ollama
-
   api:
     build: .
     ports:
       - "5454:5454"
-    depends_on:
-      - ollama
+    env_file:
+      - .env
 
   frontend:
     build: .
@@ -21,5 +14,3 @@ services:
     depends_on:
       - api
 
-volumes:
-  ollama:

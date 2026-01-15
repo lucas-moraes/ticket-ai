@@ -1,35 +1,16 @@
+from dotenv import load_dotenv
 from flask import Flask, jsonify, request
-import requests
+import os
+from huggingface_hub import InferenceClient
+
+load_dotenv()
+
+client = InferenceClient(
+    token=os.getenv("HF_TOKEN"),
+    model=os.getenv("MODEL")
+)
 
 app = Flask(__name__)
-OLLAMA_URL = "http://ollama:11434/api/generate"
-
-PROMPT_TEMPLATE = """
-Você é um especialista em Azure DevOps. 
-Gere um Work Item no formato Markdown exato para Azure Boards.
-Gere APENAS Markdown válido. Sem blocos de código ou texto extra.
-
-Tipo: {type}
-Descrição: {description}
-
-Retorne APENAS:
-
-# {type}: [Título curto e claro]
-
-**Descrição**
-[detalhes completos]
-
-**Prioridade**
-[1-4]
-
-{if_bug}**Passos para Reproduzir**
-1. ...
-2. ...{/if_bug}
-
-{if_feature}**Critérios de Aceitação**
-- [ ] ...
-- [ ] ...{/if_feature}
-"""
 
 
 @app.route('/health', methods=['GET'])
@@ -40,25 +21,48 @@ def health_check():
 @app.route('/generate-ticket', methods=['POST'])
 def generate_ticket():
     data = request.json
+    if not data or 'type' not in data or 'description' not in data:
+        return jsonify({"error": "type e description são obrigatórios"}), 400
+
     t = data['type'].lower()
-    prompt = PROMPT_TEMPLATE
-    if t == "bug":
-        prompt = prompt.replace("{if_bug}", "**Passos para Reproduzir**\n1. ...\n2. ...")
-    else:
-        prompt = prompt.replace("{if_bug}", "")
-    prompt = prompt.replace("{/if_bug}", "")
-    if t == "feature":
-        prompt = prompt.replace("{if_feature}", "**Critérios de Aceitação**\n- [ ] ...\n- [ ] ...")
-    else:
-        prompt = prompt.replace("{if_feature}", "")
-    prompt = prompt.replace("{/if_feature}", "")
-    prompt = prompt.format(type=t, description=data['description'])
-    response = requests.post(OLLAMA_URL, json={
-        "model": "phi4-mini:latest",
-        "prompt": prompt,
-        "stream": False
-    }, timeout=300)
-    ticket = response.json().get("response", "").strip()
+    desc = data['description']
+
+    bug_section = "**Passos para Reproduzir**\n1. ...\n2. ..." if t == "bug" else ""
+    feature_section = "**Critérios de Aceitação**\n- [ ] ...\n- [ ] ..." if t == "feature" else ""
+
+    prompt = f"""
+        Você é um especialista em Azure DevOps.
+        Gere um Work Item no formato Markdown exato para Azure Boards.
+        Gere APENAS Markdown válido. Sem blocos de código ou texto extra.
+        Tipo: {t.capitalize()}
+        Descrição: {desc}
+
+        Retorne APENAS:
+        # {t.capitalize()}: [Título curto e claro]
+
+        **Descrição**
+        [detalhes completos]
+
+        **Prioridade**
+        [1-4]
+
+        {bug_section}
+
+        {feature_section}
+     """.strip()
+
+    messages = [
+        {"role": "system", "content": """Você é um especialista em Azure DevOps. Gere APENAS Markdown válido para Work Item no Azure Boards, sem texto extra."""},
+        {"role": "user", "content": prompt} 
+     ]
+
+    generated = client.chat_completion(
+        messages=messages,
+        max_tokens=int(os.getenv("MAX_TOKENS", 512)),
+        temperature=float(os.getenv("TEMPERATURE", 0.7)),
+    )
+
+    ticket = generated.choices[0].message.content.strip()
     return jsonify({"ticket": ticket})
 
 
